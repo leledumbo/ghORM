@@ -9,6 +9,7 @@
       <ResourceType Value="res"/>
       <UseXPManifest Value="True"/>
     </General>
+    <LazDoc Paths="../fpdoc"/>
     <i18n>
       <EnableI18N LFM="False"/>
     </i18n>
@@ -77,7 +78,7 @@
         <PackageName Value="FCL"/>
       </Item3>
     </RequiredPackages>
-    <Units Count="3">
+    <Units Count="4">
       <Unit0>
         <Filename Value="ghormunittest.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -93,6 +94,11 @@
         <IsPartOfProject Value="True"/>
         <UnitName Value="models"/>
       </Unit2>
+      <Unit3>
+        <Filename Value="../src/ghorm.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="ghORM"/>
+      </Unit3>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

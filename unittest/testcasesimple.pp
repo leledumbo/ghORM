@@ -80,7 +80,7 @@ begin
   u.Age := 72;
   u.Birthdate := '1-1-99';
 
-  u.Load;
+  u.Load(gid);
 
   AssertEquals(u.Name,'Mario');
   AssertEquals(u.Age,24);
@@ -95,8 +95,14 @@ begin
 end;
 
 procedure TSimpleTestCase.TearDown;
+var
+  t: TghDBTable;
 begin
-  GetConnection.Tables['users'].Open.Delete;
+  t := GetConnection.Tables['users'].Open;
+  while not t.EOF do begin
+    t.Delete;
+    t.Next;
+  end;
 end;
 
 initialization

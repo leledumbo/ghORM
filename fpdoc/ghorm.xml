@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<fpdoc-descriptions><package name="ghORM Framework"><module name="ghORM"><element name="TghModel"><short>Base model for ghORM</short><descr>This is the base class that all ghORM classes should extend from to make use of ORM functionality in ghORM</descr>
+      </element><short>Object Relational Mapping unit built on top of Greyhound project</short><descr>The idea is to automate saving and loading of published properties. Note that the API is not yet stable, it might change in the future without notice</descr><element name="TghModel.GetTable"><short>Get table instance of the current model</short>
+      </element><element name="TghModel.Create"><short>Create a new or load an existing instance of a table row</short><descr>If no ID parameter is given, then an ID will be automatically assigned (and is not modifiable). Otherwise, it will try to load a row with the given ID.
+
+If an ID parameter is given, then the effect is the same as calling Create without parameter, followed by calling Load with the given ID.</descr><errors>If there's no row having the given ID, an exception will be raised</errors><seealso>TghModel.Load</seealso>
+      </element><element name="TghModel.Save"><short>Save all published properties into the permanent storage</short>
+      </element><element name="TghModel.Load"><short>Load an existing instance of a table row</short><errors>If there's no row having the given ID, an exception will be raised</errors>
+      </element><element name="TghModel.ID"><short>ID of the current instance</short><descr>This ID uniquely identifies the row and it can't be modified through this property. Use <link id="TghModel.Load">Load</link> method to change the current instance to different row.</descr>
+      </element><element name="RegisterClass"><short>Register a TghModel descendant to be recognized by ghORM system</short>
+      </element><element name="SetConnection"><short>Set connection properties to be used by ghORM</short>
+      </element><element name="SetConnection.ABroker"><short>Type of connection broker, refer to Greyhound for a complete list</short>
+      </element><element name="SetConnection.ADBName"><short>Database name</short><descr>Depending on the broker type, it can be a filename or a database name</descr>
+      </element><element name="GetConnection"><short>Get the currently active connection</short>
+      </element><element name="RegisterClass.AClass"><short>TghModel descendant class to be registered</short>
+      </element><element name="RegisterClass.AName"><descr>If no such a parameter is given, then it will be deduced automatically from the class name by removing the initial 'T'. Thus, TUsers will map to 'users' table.</descr><short>Optional parameter that maps the class and the table name.</short>
+      </element><element name="TghModel.Load.AID"><short>ID of the row to load data from</short>
+      </element><element name="TghModel.Create.AID"><short>ID of the row to load data from</short>
+      </element><element name="TghModelClass"/>
+    </module>
+  </package>
+</fpdoc-descriptions>

@@ -5,7 +5,7 @@ unit models;
 interface
 
 uses
-  ghorm;
+  ghORM;
 
 type
   TUsers = class(TghModel)

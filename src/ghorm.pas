@@ -1,10 +1,3 @@
-{
-  Object Relational Mapping unit built on top of Greyhound project
-
-  The idea is to automate saving and loading of published properties
-  Note that the API is not yet stable, it might change in the future
-  without notice
-}
 unit ghORM;
 
 {$mode objfpc}{$H+}
@@ -21,22 +14,23 @@ type
   { TghModel }
 
   TghModel = class
+  private
+    function NewID: Integer;
   protected
     FID: Integer;
-    class function NewID: Integer;
     function GetTable: TghDBTable;
   public
     constructor Create; virtual;
     constructor Create(const AID: Integer);
     procedure Save; virtual;
-    procedure Load; virtual;
+    procedure Load(const AID: Integer); virtual;
   published
     property ID: Integer read FID;
   end;
 
   TghModelClass = class of TghModel;
 
-procedure RegisterClass(AClass: TghModelClass);
+procedure RegisterClass(AClass: TghModelClass); inline;
 procedure RegisterClass(AClass: TghModelClass; const AName: String);
 
 procedure SetConnection(const ABroker: TghDBConnectorBrokerClass; const ADBName: String);
@@ -61,7 +55,7 @@ var
   Connection: TghDBConnector;
   ClassMap: TClassMap;
 
-procedure RegisterClass(AClass: TghModelClass);
+procedure RegisterClass(AClass: TghModelClass); inline;
 var
   ClassName: String;
 begin
@@ -101,7 +95,7 @@ end;
 
 { TghModel }
 
-class function TghModel.NewID: Integer;
+function TghModel.NewID: Integer;
 var
   ClsType: TClass;
 begin
@@ -124,14 +118,7 @@ end;
 
 constructor TghModel.Create(const AID: Integer);
 begin
-  FID := AID;
-  if not GetTable.EOF then
-    Load
-  else
-    raise EghDBError.CreateFmt(
-      'No row in table %s having ID = %d',
-      [ClassMap[TghModelClass(ClassType)],AID]
-    );
+  Load(AID);
 end;
 
 procedure TghModel.Save;
@@ -167,16 +154,21 @@ begin
   end;
 end;
 
-procedure TghModel.Load;
+procedure TghModel.Load(const AID: Integer);
 var
   t: TghDBTable;
   PropCount,i: Integer;
   Props: PPropList;
   Prop: PPropInfo;
 begin
+  FID := AID;
+  t := GetTable;
+  if t.EOF then raise EghDBError.CreateFmt(
+    'No row in table %s having ID = %d',
+    [ClassMap[TghModelClass(ClassType)],AID]
+  );
   PropCount := GetPropList(Self,Props);
   try
-    t := GetTable;
     for i := 0 to PropCount - 1 do begin
       Prop := Props^[i];
       case Prop^.PropType^.Kind of

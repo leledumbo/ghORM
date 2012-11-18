@@ -1,0 +1,2 @@
+execute the following command to generate the documentation (in chm format):
+fpdoc --package='ghORM Framework' --input=../src/ghorm.pas --descr=ghorm.xml --format=chm --make-searchable --auto-toc --auto-index --output=ghorm.chm
