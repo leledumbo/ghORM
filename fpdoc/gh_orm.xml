@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<fpdoc-descriptions><package name="ghORM Framework"><module name="ghORM"><element name="TghModel"><short>Base model for ghORM</short><descr>This is the base class that all ghORM classes should extend from to make use of ORM functionality in ghORM</descr>
+<fpdoc-descriptions><package name="ghORM Framework"><module name="gh_ORM"><element name="TghModel"><short>Base model for ghORM</short><descr>This is the base class that all ghORM classes should extend from to make use of ORM functionality in ghORM</descr>
       </element><short>Object Relational Mapping unit built on top of Greyhound project</short><descr>The idea is to automate saving and loading of published properties. Note that the API is not yet stable, it might change in the future without notice</descr><element name="TghModel.GetTable"><short>Get table instance of the current model</short>
       </element><element name="TghModel.Create"><short>Create a new or load an existing instance of a table row</short><descr>If no ID parameter is given, then an ID will be automatically assigned (and is not modifiable). Otherwise, it will try to load a row with the given ID.
 
