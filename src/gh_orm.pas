@@ -7,7 +7,7 @@ unit gh_orm;
 interface
 
 uses
-  gh_DB;
+  gh_SQL;
 
 type
 
@@ -18,7 +18,7 @@ type
     function NewID: Integer;
   protected
     FID: Integer;
-    function GetTable: TghDBTable;
+    function GetTable: TghSQLTable;
   public
     constructor Create; virtual;
     constructor Create(const AID: Integer);
@@ -33,8 +33,8 @@ type
 procedure RegisterClass(AClass: TghModelClass); inline;
 procedure RegisterClass(AClass: TghModelClass; const AName: String);
 
-procedure SetConnection(const ABroker: TghDBConnectorBrokerClass; const ADBName: String);
-function GetConnection: TghDBConnector; inline;
+procedure SetConnection(const ALib: TghSQLLibClass; const ADBName: String);
+function GetConnection: TghSQLConnector; inline;
 
 implementation
 
@@ -52,7 +52,7 @@ type
   TClassMap = specialize TMap<TghModelClass,String,TghModelClassLess>;
 
 var
-  Connection: TghDBConnector;
+  Connection: TghSQLConnector;
   ClassMap: TClassMap;
 
 procedure RegisterClass(AClass: TghModelClass); inline;
@@ -69,18 +69,18 @@ begin
   ClassMap[AClass] := AName;
 end;
 
-procedure SetConnection(const ABroker: TghDBConnectorBrokerClass; const ADBName: String);
+procedure SetConnection(const ALib: TghSQLLibClass; const ADBName: String);
 begin
   if Assigned(Connection) then Connection.Free;
-  Connection := TghDBConnector.Create;
+  Connection := TghSQLConnector.Create;
   with Connection do begin
-    SetBrokerClass(ABroker);
+    SetLibClass(ALib);
     Database := ADBName;
     Connect;
   end;
 end;
 
-function GetConnection: TghDBConnector; inline;
+function GetConnection: TghSQLConnector; inline;
 begin
   Result := Connection;
   Assert(Assigned(Result));
@@ -103,7 +103,7 @@ begin
   Result := Connection.Tables[ClassMap[TghModelClass(ClsType)]].Select('Count(*) + 1 AS c').Open.Columns['c'].AsInteger;
 end;
 
-function TghModel.GetTable: TghDBTable;
+function TghModel.GetTable: TghSQLTable;
 var
   ClsType: TClass;
 begin
@@ -123,7 +123,7 @@ end;
 
 procedure TghModel.Save;
 var
-  t: TghDBTable;
+  t: TghSQLTable;
   PropCount,i: Integer;
   Props: PPropList;
   Prop: PPropInfo;
@@ -156,14 +156,14 @@ end;
 
 procedure TghModel.Load(const AID: Integer);
 var
-  t: TghDBTable;
+  t: TghSQLTable;
   PropCount,i: Integer;
   Props: PPropList;
   Prop: PPropInfo;
 begin
   FID := AID;
   t := GetTable;
-  if t.EOF then raise EghDBError.CreateFmt(
+  if t.EOF then raise EghSQL.CreateFmt(
     'No row in table %s having ID = %d',
     [ClassMap[TghModelClass(ClassType)],AID]
   );

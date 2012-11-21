@@ -24,7 +24,7 @@ type
 implementation
 
 uses
-  gh_DB, gh_DBSQLdb, ghorm, models;
+  gh_SQL, gh_SQLdbLib, gh_orm, models;
 
 var
   gid: Integer;
@@ -62,7 +62,7 @@ begin
   try
     u := TUsers.Create(255);
   except
-    on e: EghDBError do
+    on e: EghSQL do
       Exit;
     on e: Exception do
       Fail('Unexpected ' + e.ClassName + ': ' + e.Message);
@@ -91,12 +91,12 @@ end;
 
 procedure TSimpleTestCase.SetUp;
 begin
-  SetConnection(TghDBSQLite3Broker,'test.db');
+  SetConnection(TghSQLite3Lib,'test.db');
 end;
 
 procedure TSimpleTestCase.TearDown;
 var
-  t: TghDBTable;
+  t: TghSQLTable;
 begin
   t := GetConnection.Tables['users'].Open;
   while not t.EOF do begin

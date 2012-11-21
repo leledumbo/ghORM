@@ -5,7 +5,7 @@ unit models;
 interface
 
 uses
-  ghORM;
+  gh_orm;
 
 type
   TUsers = class(TghModel)

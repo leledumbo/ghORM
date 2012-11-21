@@ -67,16 +67,19 @@
         <FormatVersion Value="1"/>
       </local>
     </RunParams>
-    <RequiredPackages Count="3">
+    <RequiredPackages Count="4">
       <Item1>
-        <PackageName Value="FPCUnitTestRunner"/>
+        <PackageName Value="gh_pack"/>
       </Item1>
       <Item2>
-        <PackageName Value="LCL"/>
+        <PackageName Value="FPCUnitTestRunner"/>
       </Item2>
       <Item3>
-        <PackageName Value="FCL"/>
+        <PackageName Value="LCL"/>
       </Item3>
+      <Item4>
+        <PackageName Value="FCL"/>
+      </Item4>
     </RequiredPackages>
     <Units Count="4">
       <Unit0>
@@ -95,9 +98,9 @@
         <UnitName Value="models"/>
       </Unit2>
       <Unit3>
-        <Filename Value="../src/ghorm.pas"/>
+        <Filename Value="../src/gh_orm.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="ghORM"/>
+        <UnitName Value="gh_orm"/>
       </Unit3>
     </Units>
   </ProjectOptions>
