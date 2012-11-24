@@ -103,6 +103,7 @@ begin
     t.Delete;
     t.Next;
   end;
+  t.Commit;
 end;
 
 initialization
