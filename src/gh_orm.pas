@@ -72,9 +72,8 @@ end;
 procedure SetConnection(const ALib: TghSQLLibClass; const ADBName: String);
 begin
   if Assigned(Connection) then Connection.Free;
-  Connection := TghSQLConnector.Create;
+  Connection := TghSQLConnector.Create(ALib);
   with Connection do begin
-    SetLibClass(ALib);
     Database := ADBName;
     Connect;
   end;
