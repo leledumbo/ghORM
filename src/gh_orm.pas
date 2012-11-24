@@ -43,13 +43,13 @@ uses
 
 type
 
-  { TghModelClassLess }
+  { TClassLess }
 
-  TghModelClassLess = class
-    class function c(a,b:TghModelClass):boolean;inline;
+  TClassLess = class
+    class function c(a,b:TClass):boolean;inline;
   end;
 
-  TClassMap = specialize TMap<TghModelClass,String,TghModelClassLess>;
+  TClassMap = specialize TMap<TClass,String,TClassLess>;
 
 var
   Connection: TghSQLConnector;
@@ -85,9 +85,9 @@ begin
   Assert(Assigned(Result));
 end;
 
-{ TghModelClassLess }
+{ TClassLess }
 
-class function TghModelClassLess.c(a,b: TghModelClass): boolean;
+class function TClassLess.c(a,b: TClass): boolean;
 begin
   Result := PtrUInt(a) < PtrUInt(b);
 end;
@@ -99,7 +99,7 @@ var
   ClsType: TClass;
 begin
   ClsType := ClassType;
-  Result := Connection.Tables[ClassMap[TghModelClass(ClsType)]].Select('Count(*) + 1 AS c').Open.Columns['c'].AsInteger;
+  Result := Connection.Tables[ClassMap[ClsType]].Select('Count(*) + 1 AS c').Open.Columns['c'].AsInteger;
 end;
 
 function TghModel.GetTable: TghSQLTable;
@@ -107,7 +107,7 @@ var
   ClsType: TClass;
 begin
   ClsType := ClassType;
-  Result := GetConnection.Tables[ClassMap[TghModelClass(ClsType)]].Where('id = ' + IntToStr(FID)).Open;
+  Result := GetConnection.Tables[ClassMap[ClsType]].Where('id = ' + IntToStr(FID)).Open;
 end;
 
 constructor TghModel.Create;
