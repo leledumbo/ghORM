@@ -26,9 +26,6 @@ implementation
 uses
   gh_SQL, gh_SQLdbLib, gh_orm, models;
 
-var
-  gid: Integer;
-
 procedure TSimpleTestCase.InsertNewLoadExisting;
 var
   u: TUsers;
@@ -51,8 +48,6 @@ begin
   AssertEquals(u.Birthdate,'25-3-88');
 
   u.Free;
-
-  gid := id;
 end;
 
 procedure TSimpleTestCase.LoadNotExisting;
@@ -73,14 +68,26 @@ end;
 procedure TSimpleTestCase.Reset;
 var
   u: TUsers;
+  id: Integer;
 begin
-  u := TUsers.Create(gid);
+  // create
+  u := TUsers.Create;
+  u.Name := 'Mario';
+  u.Age := 24;
+  u.Birthdate := '25-03-88';
+  u.Save;
 
+  id := u.ID;
+
+  u.Free;
+  // load
+  u := TUsers.Create(id);
+  // edit
   u.Name := 'Marijan';
   u.Age := 72;
   u.Birthdate := '1-1-99';
-
-  u.Load(gid);
+  // reset
+  u.Load(id);
 
   AssertEquals(u.Name,'Mario');
   AssertEquals(u.Age,24);
