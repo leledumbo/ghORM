@@ -26,12 +26,16 @@ implementation
 uses
   gh_SQL, gh_SQLdbLib, gh_orm, models;
 
+const
+  DBFileName = 'test.db';
+  ScriptName = 'test.sql';
+
 procedure TSimpleTestCase.InsertNewLoadExisting;
 var
-  u: TUsers;
+  u: TUser;
   id: Integer;
 begin
-  u := TUsers.Create;
+  u := TUser.Create;
   u.Name := 'Mario';
   u.Age := 24;
   u.Birthdate := '25-03-88';
@@ -41,23 +45,23 @@ begin
 
   u.Free;
 
-  u := TUsers.Create(id);
+  u := TUser.Create(id);
 
   AssertEquals(u.Name,'Mario');
   AssertEquals(u.Age,24);
-  AssertEquals(u.Birthdate,'25-3-88');
+  AssertEquals(u.Birthdate,'25-03-88');
 
   u.Free;
 end;
 
 procedure TSimpleTestCase.LoadNotExisting;
 var
-  u: TUsers;
+  u: TUser;
 begin
   try
-    u := TUsers.Create(255);
+    u := TUser.Create(255);
   except
-    on e: EghSQL do
+    on e: EghSQLError do
       Exit;
     on e: Exception do
       Fail('Unexpected ' + e.ClassName + ': ' + e.Message);
@@ -67,11 +71,11 @@ end;
 
 procedure TSimpleTestCase.Reset;
 var
-  u: TUsers;
+  u: TUser;
   id: Integer;
 begin
   // create
-  u := TUsers.Create;
+  u := TUser.Create;
   u.Name := 'Mario';
   u.Age := 24;
   u.Birthdate := '25-03-88';
@@ -81,7 +85,7 @@ begin
 
   u.Free;
   // load
-  u := TUsers.Create(id);
+  u := TUser.Create(id);
   // edit
   u.Name := 'Marijan';
   u.Age := 72;
@@ -91,26 +95,37 @@ begin
 
   AssertEquals(u.Name,'Mario');
   AssertEquals(u.Age,24);
-  AssertEquals(u.Birthdate,'25-3-88');
+  AssertEquals(u.Birthdate,'25-03-88');
 
   u.Free;
 end;
 
 procedure TSimpleTestCase.SetUp;
 begin
-  SetConnection(TghSQLite3Lib,'test.db');
+  SetConnection(TghSQLite3Lib,DBFileName);
+  with TghSQLClient.Create(GetConnection) do
+    try
+      Clear;
+      IsBatch := true;
+      Script.LoadFromFile(ScriptName);
+      Execute;
+    finally
+      Free;
+    end;
+  TUser.ConnectMN('role');
 end;
 
 procedure TSimpleTestCase.TearDown;
 var
   t: TghSQLTable;
 begin
-  t := GetConnection.Tables['users'].Open;
+  t := GetConnection.Tables['user'].Open;
   while not t.EOF do begin
     t.Delete;
     t.Next;
   end;
   t.Commit;
+  DeleteFile(DBFileName);
 end;
 
 initialization

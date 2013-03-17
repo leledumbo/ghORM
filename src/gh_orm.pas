@@ -25,8 +25,8 @@ type
     constructor Create(const AID: Integer);
     procedure Save; virtual;
     procedure Load(const AID: Integer); virtual;
-    procedure Connect1N(const ATargetTable: String);
-    procedure ConnectMN(const ATargetTable: String);
+    class procedure Connect1N(const ATargetTable: String);
+    class procedure ConnectMN(const ATargetTable: String);
   published
     property ID: Integer read FID;
   end;
@@ -62,6 +62,17 @@ type
 
   TClassMap = specialize THashmap<TClass,TClassInfo,TClassHash>;
 
+class function TClassHash.hash(a: TClass; n: longint): longint;
+var
+  s: String;
+  c: Char;
+begin
+  Result := 0;
+  s := LowerCase(a.ClassName);
+  for c in s do Inc(Result,Ord(c));
+  Result := Result mod n;
+end;
+
 var
   Connection: TghSQLConnector;
   ClassMap: TClassMap;
@@ -82,11 +93,14 @@ end;
 
 procedure RegisterClass(AClass: TghModelClass; const AName: String;
   const AIDGeneratorName: String);
+var
+  ClassInfo: TClassInfo;
 begin
-  with ClassMap[AClass] do begin
+  with ClassInfo do begin
     Name := AName;
     IDGeneratorName := AIDGeneratorName;
   end;
+  ClassMap[AClass] := ClassInfo;
 end;
 
 procedure SetConnection(const ALib: TghSQLLibClass; const ADBName: String);
@@ -114,11 +128,6 @@ begin
     'mssql'    : Result := TghMSSQLLib;
     else         Result := nil;
   end;
-end;
-
-class function TClassHash.hash(a: TClass; n: longint): longint;
-begin
-  Result := PtrUInt(a) mod n;
 end;
 
 { TghModel }
@@ -216,16 +225,19 @@ begin
   end;
 end;
 
-procedure TghModel.Connect1N(const ATargetTable: String);
+class procedure TghModel.Connect1N(const ATargetTable: String);
 begin
   GetTableClass.Relations[ATargetTable].Where('id = :' + ATargetTable + '_id')
 end;
 
-procedure TghModel.ConnectMN(const ATargetTable: String);
+class procedure TghModel.ConnectMN(const ATargetTable: String);
 var
   ThisClassName: String;
+  c: TClass;
 begin
-  ThisClassName := ClassMap[ClassType].Name;
+  c := ClassType;
+  ThisClassName := c.ClassName;
+  ThisClassName := ClassMap[c].Name;
   GetTableClass
     .Relations[ATargetTable]
     .Where(

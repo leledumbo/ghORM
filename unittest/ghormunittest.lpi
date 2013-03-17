@@ -69,7 +69,7 @@
     </RunParams>
     <RequiredPackages Count="4">
       <Item1>
-        <PackageName Value="gh_pack"/>
+        <PackageName Value="Greyhound"/>
       </Item1>
       <Item2>
         <PackageName Value="FPCUnitTestRunner"/>
