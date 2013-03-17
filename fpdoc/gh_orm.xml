@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <fpdoc-descriptions><package name="ghORM Framework"><module name="gh_ORM"><element name="TghModel"><short>Base model for ghORM</short><descr>This is the base class that all ghORM classes should extend from to make use of ORM functionality in ghORM</descr>
       </element><short>Object Relational Mapping unit built on top of Greyhound project</short><descr>The idea is to automate saving and loading of published properties. Note that the API is not yet stable, it might change in the future without notice</descr><element name="TghModel.GetTable"><short>Get table instance of the current model</short>
-      </element><element name="TghModel.Create"><short>Create a new or load an existing instance of a table row</short><descr>If no ID parameter is given, then an ID will be automatically assigned (and is not modifiable). Otherwise, it will try to load a row with the given ID.
+      </element><element name="TghModel.Create"><short>Create a new or load an existing instance of a table row</short><descr>If no ID parameter is given, then an ID will be automatically assigned (and is not modifiable). Otherwise, it will try to load a row with the given ID. Note that the automatic ID assignment is <b>NOT</b> thread-safe, therefore one should handle it with care.
 
 If an ID parameter is given, then the effect is the same as calling Create without parameter, followed by calling Load with the given ID.</descr><errors>If there's no row having the given ID, an exception will be raised</errors><seealso>TghModel.Load</seealso>
       </element><element name="TghModel.Save"><short>Save all published properties into the permanent storage</short>
@@ -17,6 +17,24 @@ If an ID parameter is given, then the effect is the same as calling Create witho
       </element><element name="TghModel.Load.AID"><short>ID of the row to load data from</short>
       </element><element name="TghModel.Create.AID"><short>ID of the row to load data from</short>
       </element><element name="TghModelClass"/>
+    <element name="TghModel.GetTableClass"><short>Get the table represented by this class</short>
+      </element>
+    <element name="TghModel.GetTableInstance"><short>Get the table row represented by this object</short>
+      </element>
+    <element name="TghModel.Connect"><short>Connect with other table to create relationship</short>
+      </element><element name="TghModel.Connect.TargetTable"/><element name="TghModel.Connect.ATargetTable"><short>Name of table to connect</short>
+      </element><element name="TghModel.GeneratorName"/><element name="ConnectionNameToLibClass"><short>Retrieve lib class by name</short><descr>The following is currently defined:
+<ul><li>sqlite3</li><li>interbase</li><li>firebird</li><li>mssql</li>
+          </ul>
+        </descr><errors>If invalid name given, <var>nil</var> will be returned</errors>
+      </element><element name="TghModel.ConnectMN"><descr>It uses the following convention rule to make the connection easy:
+<ul><li>an auxiliary table named &lt;this class name&gt;_&lt;target table&gt; is assumed to exist</li><li>the table consist of &lt;this class name&gt;_id and &lt;target table&gt;_id columns</li>
+          </ul>
+        </descr><short>Create M-N relationship with table named <var>ATargetTable</var>
+        </short><errors>An exception will be raised if either the target table or auxiliary table doesn't exist</errors>
+      </element><element name="TghModel.Connect1N"><short>Create 1-N relationship with table named <var>ATargetTable</var>
+        </short>
+      </element>
     </module>
   </package>
 </fpdoc-descriptions>

@@ -18,12 +18,15 @@ type
     function NewID: Integer;
   protected
     FID: Integer;
-    function GetTable: TghSQLTable;
+    class function GetTableClass: TghSQLTable;
+    function GetTableInstance: TghSQLTable;
   public
     constructor Create; virtual;
     constructor Create(const AID: Integer);
     procedure Save; virtual;
     procedure Load(const AID: Integer); virtual;
+    procedure Connect1N(const ATargetTable: String);
+    procedure ConnectMN(const ATargetTable: String);
   published
     property ID: Integer read FID;
   end;
@@ -31,25 +34,33 @@ type
   TghModelClass = class of TghModel;
 
 procedure RegisterClass(AClass: TghModelClass); inline;
-procedure RegisterClass(AClass: TghModelClass; const AName: String);
+procedure RegisterClass(AClass: TghModelClass; const AName: String); inline;
+procedure RegisterClass(AClass: TghModelClass; const AName: String; const AIDGeneratorName: String);
 
 procedure SetConnection(const ALib: TghSQLLibClass; const ADBName: String);
 function GetConnection: TghSQLConnector; inline;
 
+function ConnectionNameToLibClass(const AConName: String): TghSQLLibClass;
+
 implementation
 
 uses
-  SysUtils,TypInfo,gmap;
+  SysUtils,TypInfo,ghashmap,gh_SQLdbLib;
 
 type
 
-  { TClassLess }
+  { TClassHash }
 
-  TClassLess = class
-    class function c(a,b:TClass):boolean;inline;
+  TClassHash = class
+    class function hash(a:TClass; n:longint):longint; inline;
   end;
 
-  TClassMap = specialize TMap<TClass,String,TClassLess>;
+  TClassInfo = record
+    Name: String;
+    IDGeneratorName: String;
+  end;
+
+  TClassMap = specialize THashmap<TClass,TClassInfo,TClassHash>;
 
 var
   Connection: TghSQLConnector;
@@ -66,7 +77,16 @@ end;
 
 procedure RegisterClass(AClass: TghModelClass; const AName: String);
 begin
-  ClassMap[AClass] := AName;
+  RegisterClass(AClass,AName,'');
+end;
+
+procedure RegisterClass(AClass: TghModelClass; const AName: String;
+  const AIDGeneratorName: String);
+begin
+  with ClassMap[AClass] do begin
+    Name := AName;
+    IDGeneratorName := AIDGeneratorName;
+  end;
 end;
 
 procedure SetConnection(const ALib: TghSQLLibClass; const ADBName: String);
@@ -85,29 +105,37 @@ begin
   Assert(Assigned(Result));
 end;
 
-{ TClassLess }
-
-class function TClassLess.c(a,b: TClass): boolean;
+function ConnectionNameToLibClass(const AConName: String): TghSQLLibClass;
 begin
-  Result := PtrUInt(a) < PtrUInt(b);
+  case LowerCase(AConName) of
+    'sqlite3'  : Result := TghSQLite3Lib;
+    'interbase': Result := TghIBLib;
+    'firebird' : Result := TghFirebirdLib;
+    'mssql'    : Result := TghMSSQLLib;
+    else         Result := nil;
+  end;
+end;
+
+class function TClassHash.hash(a: TClass; n: longint): longint;
+begin
+  Result := PtrUInt(a) mod n;
 end;
 
 { TghModel }
 
 function TghModel.NewID: Integer;
-var
-  ClsType: TClass;
 begin
-  ClsType := ClassType;
-  Result := Connection.Tables[ClassMap[ClsType]].Select('Count(*) + 1 AS c').Open.Columns['c'].AsInteger;
+  Result := Connection.Lib.GetSequenceValue(ClassMap[ClassType].IDGeneratorName);
 end;
 
-function TghModel.GetTable: TghSQLTable;
-var
-  ClsType: TClass;
+class function TghModel.GetTableClass: TghSQLTable;
 begin
-  ClsType := ClassType;
-  Result := GetConnection.Tables[ClassMap[ClsType]].Where('id = ' + IntToStr(FID)).Open;
+  Result := GetConnection.Tables[ClassMap[ClassType].Name];
+end;
+
+function TghModel.GetTableInstance: TghSQLTable;
+begin
+  Result := GetTableClass.Where('id = ' + IntToStr(FID)).Open;
 end;
 
 constructor TghModel.Create;
@@ -127,7 +155,7 @@ var
   Props: PPropList;
   Prop: PPropInfo;
 begin
-  t := GetTable;
+  t := GetTableInstance;
   PropCount := GetPropList(Self,Props);
   try
     if t.EOF then t.Insert else t.Edit;
@@ -161,10 +189,10 @@ var
   Prop: PPropInfo;
 begin
   FID := AID;
-  t := GetTable;
-  if t.EOF then raise EghSQL.CreateFmt(
+  t := GetTableInstance;
+  if t.EOF then raise EghSQLError.CreateFmt(
     'No row in table %s having ID = %d',
-    [ClassMap[TghModelClass(ClassType)],AID]
+    [ClassMap[TghModelClass(ClassType)].Name,AID]
   );
   PropCount := GetPropList(Self,Props);
   try
@@ -186,6 +214,27 @@ begin
   finally
     FreeMem(Props);
   end;
+end;
+
+procedure TghModel.Connect1N(const ATargetTable: String);
+begin
+  GetTableClass.Relations[ATargetTable].Where('id = :' + ATargetTable + '_id')
+end;
+
+procedure TghModel.ConnectMN(const ATargetTable: String);
+var
+  ThisClassName: String;
+begin
+  ThisClassName := ClassMap[ClassType].Name;
+  GetTableClass
+    .Relations[ATargetTable]
+    .Where(
+      Format(
+        'id in (select %s_id from %s_%s where %s_id = :id)',
+        [ATargetTable,ThisClassName,ATargetTable,ThisClassName]
+      )
+    )
+    .OrderBy('id');
 end;
 
 initialization

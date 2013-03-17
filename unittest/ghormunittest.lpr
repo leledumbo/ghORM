@@ -3,7 +3,8 @@ program ghormunittest;
 {$mode objfpc}{$H+}
 
 uses
-  Interfaces, Forms, GuiTestRunner, testcasesimple, models, gh_orm;
+  Interfaces, Forms, GuiTestRunner, testcasesimple, models, gh_orm,
+testcaserelationship;
 
 {$R *.res}
 

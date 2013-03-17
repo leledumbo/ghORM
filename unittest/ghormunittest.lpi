@@ -81,7 +81,7 @@
         <PackageName Value="FCL"/>
       </Item4>
     </RequiredPackages>
-    <Units Count="4">
+    <Units Count="5">
       <Unit0>
         <Filename Value="ghormunittest.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -102,6 +102,11 @@
         <IsPartOfProject Value="True"/>
         <UnitName Value="gh_orm"/>
       </Unit3>
+      <Unit4>
+        <Filename Value="testcaserelationship.pp"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="testcaserelationship"/>
+      </Unit4>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
