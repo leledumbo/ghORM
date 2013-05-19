@@ -7,14 +7,26 @@ unit gh_orm;
 interface
 
 uses
-  gh_SQL;
+  gh_SQL, gvector;
 
 type
+
+  TghModel = class;
+
+  { TghModelList }
+
+  TghModelList = class(specialize TVector<TghModel>)
+  public
+    destructor Destroy; override;
+  end;
+
+  TghModelClass = class of TghModel;
 
   { TghModel }
 
   TghModel = class
   private
+    function GetConnections(const ATargetTable: TghModelClass): TghModelList;
     function NewID: Integer;
   protected
     FID: Integer;
@@ -23,15 +35,14 @@ type
   public
     constructor Create; virtual;
     constructor Create(const AID: Integer);
+    class procedure Connect1N(const ATargetTable: TghModelClass);
+    class procedure ConnectMN(const ATargetTable: TghModelClass);
     procedure Save; virtual;
     procedure Load(const AID: Integer); virtual;
-    class procedure Connect1N(const ATargetTable: String);
-    class procedure ConnectMN(const ATargetTable: String);
+    property Connections[const ATargetTable: TghModelClass]: TghModelList read GetConnections;
   published
     property ID: Integer read FID;
   end;
-
-  TghModelClass = class of TghModel;
 
 procedure RegisterClass(AClass: TghModelClass); inline;
 procedure RegisterClass(AClass: TghModelClass; const AName: String); inline;
@@ -61,6 +72,16 @@ type
   end;
 
   TClassMap = specialize THashmap<TClass,TClassInfo,TClassHash>;
+
+{ TghModelList }
+
+destructor TghModelList.Destroy;
+var
+  m: TghModel;
+begin
+  for m in Self do m.Free;
+  inherited Destroy;
+end;
 
 class function TClassHash.hash(a: TClass; n: longint): longint;
 var
@@ -131,6 +152,23 @@ begin
 end;
 
 { TghModel }
+
+function TghModel.GetConnections(const ATargetTable: TghModelClass
+  ): TghModelList;
+var
+  Rel: TghSQLTable;
+begin
+  if ClassMap.Contains(ATargetTable) then begin
+    Result := TghModelList.Create;
+    Rel := GetTableInstance.Links[ClassMap[ATargetTable].Name];
+    Rel.First;
+    while not Rel.EOF do begin
+      Result.PushBack(ATargetTable.Create(Rel.Columns['id'].AsInteger));
+      Rel.Next;
+    end;
+  end else
+    raise EghSQLError.CreateFmt('%s is not a registered model class',[ATargetTable.ClassName]);
+end;
 
 function TghModel.NewID: Integer;
 begin
@@ -225,28 +263,35 @@ begin
   end;
 end;
 
-class procedure TghModel.Connect1N(const ATargetTable: String);
+class procedure TghModel.Connect1N(const ATargetTable: TghModelClass);
+var
+  TargetClassName: String;
 begin
-  GetTableClass.Relations[ATargetTable].Where('id = :' + ATargetTable + '_id')
+  if ClassMap.Contains(ATargetTable) then begin
+    TargetClassName := ClassMap[ATargetTable].Name;
+    GetTableClass.Relations[TargetClassName].Where(TargetClassName + '_id = :id');
+  end else
+    raise EghSQLError.CreateFmt('%s is not a registered model class',[ATargetTable.ClassName]);
 end;
 
-class procedure TghModel.ConnectMN(const ATargetTable: String);
+class procedure TghModel.ConnectMN(const ATargetTable: TghModelClass);
 var
-  ThisClassName: String;
-  c: TClass;
+  ThisClassName,TargetClassName: String;
 begin
-  c := ClassType;
-  ThisClassName := c.ClassName;
-  ThisClassName := ClassMap[c].Name;
-  GetTableClass
-    .Relations[ATargetTable]
-    .Where(
-      Format(
-        'id in (select %s_id from %s_%s where %s_id = :id)',
-        [ATargetTable,ThisClassName,ATargetTable,ThisClassName]
+  if ClassMap.Contains(ATargetTable) then begin
+    ThisClassName := ClassMap[ClassType].Name;
+    TargetClassName := ClassMap[ATargetTable].Name;
+    GetTableClass
+      .Relations[TargetClassName]
+      .Where(
+        Format(
+          'id in (select %s_id from %s_%s where %s_id = :id)',
+          [TargetClassName,ThisClassName,TargetClassName,ThisClassName]
+        )
       )
-    )
-    .OrderBy('id');
+      .OrderBy('id');
+  end else
+    raise EghSQLError.CreateFmt('%s is not a registered model class',[ATargetTable.ClassName]);
 end;
 
 initialization

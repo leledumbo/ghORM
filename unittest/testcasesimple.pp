@@ -17,6 +17,7 @@ type
     procedure TearDown; override;
   published
     procedure InsertNewLoadExisting;
+    procedure InsertNewSaveLoadEditSaveLoad;
     procedure LoadNotExisting;
     procedure Reset;
   end;
@@ -35,21 +36,37 @@ var
   u: TUser;
   id: Integer;
 begin
-  u := TUser.Create;
-  u.Name := 'Mario';
-  u.Age := 24;
-  u.Birthdate := '25-03-88';
-  u.Save;
-
-  id := u.ID;
-
-  u.Free;
+  id := AddUser('Mario',25,'25-03-88'); // take the auto increment id value
 
   u := TUser.Create(id);
 
   AssertEquals(u.Name,'Mario');
   AssertEquals(u.Age,24);
   AssertEquals(u.Birthdate,'25-03-88');
+
+  u.Free;
+end;
+
+procedure TSimpleTestCase.InsertNewSaveLoadEditSaveLoad;
+var
+  id: objpas.Integer;
+  u: TUser;
+begin
+  id := AddUser('Mario',25,'25-03-88'); // take the auto increment id value
+
+  // load
+  u := TUser.Create(id);
+  // edit
+  u.Name := 'Marijan';
+  u.Age := 72;
+  u.Birthdate := '1-1-99';
+  u.Save;
+  // reset
+  u.Load(id);
+
+  AssertEquals(u.Name,'Marijan');
+  AssertEquals(u.Age,72);
+  AssertEquals(u.Birthdate,'1-1-99');
 
   u.Free;
 end;
@@ -74,16 +91,8 @@ var
   u: TUser;
   id: Integer;
 begin
-  // create
-  u := TUser.Create;
-  u.Name := 'Mario';
-  u.Age := 24;
-  u.Birthdate := '25-03-88';
-  u.Save;
+  id := AddUser('Mario',25,'25-03-88'); // take the auto increment id value
 
-  id := u.ID;
-
-  u.Free;
   // load
   u := TUser.Create(id);
   // edit
@@ -112,7 +121,6 @@ begin
     finally
       Free;
     end;
-  TUser.ConnectMN('role');
 end;
 
 procedure TSimpleTestCase.TearDown;

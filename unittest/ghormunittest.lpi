@@ -25,8 +25,7 @@
             <Filename Value="ghormunittest"/>
           </Target>
           <SearchPaths>
-            <IncludeFiles Value="$(ProjOutDir);../src"/>
-            <OtherUnitFiles Value="../src"/>
+            <IncludeFiles Value="$(ProjOutDir)"/>
             <UnitOutputDirectory Value="lib/$(TargetCPU)-$(TargetOS)"/>
           </SearchPaths>
           <CodeGeneration>
@@ -67,19 +66,22 @@
         <FormatVersion Value="1"/>
       </local>
     </RunParams>
-    <RequiredPackages Count="4">
+    <RequiredPackages Count="5">
       <Item1>
-        <PackageName Value="Greyhound"/>
+        <PackageName Value="ghORM"/>
       </Item1>
       <Item2>
-        <PackageName Value="FPCUnitTestRunner"/>
+        <PackageName Value="Greyhound"/>
       </Item2>
       <Item3>
-        <PackageName Value="LCL"/>
+        <PackageName Value="FPCUnitTestRunner"/>
       </Item3>
       <Item4>
-        <PackageName Value="FCL"/>
+        <PackageName Value="LCL"/>
       </Item4>
+      <Item5>
+        <PackageName Value="FCL"/>
+      </Item5>
     </RequiredPackages>
     <Units Count="5">
       <Unit0>
@@ -98,14 +100,13 @@
         <UnitName Value="models"/>
       </Unit2>
       <Unit3>
-        <Filename Value="../src/gh_orm.pas"/>
-        <IsPartOfProject Value="True"/>
-        <UnitName Value="gh_orm"/>
-      </Unit3>
-      <Unit4>
         <Filename Value="testcaserelationship.pp"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="testcaserelationship"/>
+      </Unit3>
+      <Unit4>
+        <Filename Value="test.sql"/>
+        <IsPartOfProject Value="True"/>
       </Unit4>
     </Units>
   </ProjectOptions>
@@ -115,8 +116,7 @@
       <Filename Value="ghormunittest"/>
     </Target>
     <SearchPaths>
-      <IncludeFiles Value="$(ProjOutDir);../src"/>
-      <OtherUnitFiles Value="../src"/>
+      <IncludeFiles Value="$(ProjOutDir)"/>
       <UnitOutputDirectory Value="lib/$(TargetCPU)-$(TargetOS)"/>
     </SearchPaths>
     <CodeGeneration>

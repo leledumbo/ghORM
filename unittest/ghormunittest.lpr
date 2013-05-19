@@ -3,8 +3,11 @@ program ghormunittest;
 {$mode objfpc}{$H+}
 
 uses
-  Interfaces, Forms, GuiTestRunner, testcasesimple, models, gh_orm,
-testcaserelationship;
+  Interfaces,
+  Forms,
+  GuiTestRunner,
+  testcasesimple,
+  testcaserelationship;
 
 {$R *.res}
 
@@ -13,4 +16,3 @@ begin
   Application.CreateForm(TGuiTestRunner, TestRunner);
   Application.Run;
 end.
-

@@ -34,6 +34,13 @@ If an ID parameter is given, then the effect is the same as calling Create witho
         </short><errors>An exception will be raised if either the target table or auxiliary table doesn't exist</errors>
       </element><element name="TghModel.Connect1N"><short>Create 1-N relationship with table named <var>ATargetTable</var>
         </short>
+      <descr>It uses the following convention rule to make the connection easy:
+<ul><li>The target table should have &lt;this class name&gt;_id as foreign key column</li>
+          </ul>
+        </descr>
+      </element>
+    <element name="TghModel.Connect1N.ATargetTable"><short>Name of the table to connect</short>
+      </element><element name="TghModel.ConnectMN.ATargetTable"><short>Name of the table to connect</short>
       </element>
     </module>
   </package>
