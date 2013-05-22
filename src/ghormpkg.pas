@@ -2,12 +2,12 @@
   This source is only used to compile and install the package.
  }
 
-unit ghORM;
+unit ghormpkg;
 
 interface
 
 uses
-  gh_orm, LazarusPackageIntf;
+  ghorm, LazarusPackageIntf;
 
 implementation
 
@@ -16,5 +16,5 @@ begin
 end;
 
 initialization
-  RegisterPackage('ghORM',@Register);
+  RegisterPackage('ghormpkg',@Register);
 end.

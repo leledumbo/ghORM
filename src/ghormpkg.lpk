@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <CONFIG>
   <Package Version="4">
-    <Name Value="ghORM"/>
+    <Name Value="ghormpkg"/>
     <CompilerOptions>
       <Version Value="11"/>
       <SearchPaths>
@@ -16,8 +16,8 @@
     </CompilerOptions>
     <Files Count="1">
       <Item1>
-        <Filename Value="gh_orm.pas"/>
-        <UnitName Value="gh_orm"/>
+        <Filename Value="ghorm.pas"/>
+        <UnitName Value="ghorm"/>
       </Item1>
     </Files>
     <LazDoc Paths="../fpdoc"/>

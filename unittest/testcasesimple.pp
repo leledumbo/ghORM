@@ -25,7 +25,7 @@ type
 implementation
 
 uses
-  gh_SQL, gh_SQLdbLib, gh_orm, models;
+  ghSQL, ghSQLdbLib, ghorm, models;
 
 const
   DBFileName = 'test.db';

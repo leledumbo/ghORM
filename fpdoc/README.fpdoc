@@ -1,3 +1,3 @@
 # execute the following command to generate the documentation (in chm format):
 # BASH-compatible shell users, feel free to execute this file :)
-fpdoc --package='ghORM Framework' --input=../src/gh_orm.pas --descr=gh_orm.xml --format=chm --make-searchable --auto-toc --auto-index --output=ghorm.chm
+fpdoc --package='ghORM Framework' --input=../src/ghorm.pas --descr=ghorm.xml --format=chm --make-searchable --auto-toc --auto-index --output=ghorm.chm

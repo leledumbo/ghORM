@@ -5,7 +5,7 @@ unit models;
 interface
 
 uses
-  gh_orm;
+  ghorm;
 
 type
 

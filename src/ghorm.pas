@@ -1,4 +1,4 @@
-unit gh_orm;
+unit ghorm;
 
 {$mode objfpc}{$H+}
 {$assertions on}
@@ -7,7 +7,7 @@ unit gh_orm;
 interface
 
 uses
-  gh_SQL, gvector;
+  ghSQL, gvector;
 
 type
 
@@ -56,7 +56,7 @@ function ConnectionNameToLibClass(const AConName: String): TghSQLLibClass;
 implementation
 
 uses
-  SysUtils,TypInfo,ghashmap,gh_SQLdbLib;
+  SysUtils,TypInfo,ghashmap,ghSQLdbLib;
 
 type
 

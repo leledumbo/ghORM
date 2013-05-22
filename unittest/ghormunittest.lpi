@@ -68,7 +68,7 @@
     </RunParams>
     <RequiredPackages Count="5">
       <Item1>
-        <PackageName Value="ghORM"/>
+        <PackageName Value="ghormpkg"/>
       </Item1>
       <Item2>
         <PackageName Value="Greyhound"/>
