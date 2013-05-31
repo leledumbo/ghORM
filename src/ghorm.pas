@@ -1,4 +1,4 @@
-unit ghorm;
+unit ghORM;
 
 {$mode objfpc}{$H+}
 {$assertions on}
@@ -27,7 +27,6 @@ type
   TghModel = class
   private
     function GetConnections(const ATargetTable: TghModelClass): TghModelList;
-    function NewID: Integer;
   protected
     FID: Integer;
     class function GetTableClass: TghSQLTable;
@@ -170,11 +169,6 @@ begin
     raise EghSQLError.CreateFmt('%s is not a registered model class',[ATargetTable.ClassName]);
 end;
 
-function TghModel.NewID: Integer;
-begin
-  Result := Connection.Lib.GetSequenceValue(ClassMap[ClassType].IDGeneratorName);
-end;
-
 class function TghModel.GetTableClass: TghSQLTable;
 begin
   Result := GetConnection.Tables[ClassMap[ClassType].Name];
@@ -187,7 +181,7 @@ end;
 
 constructor TghModel.Create;
 begin
-  FID := NewID;
+  FID := -1;
 end;
 
 constructor TghModel.Create(const AID: Integer);
@@ -201,6 +195,7 @@ var
   PropCount,i: Integer;
   Props: PPropList;
   Prop: PPropInfo;
+  PropName: String;
 begin
   t := GetTableInstance;
   PropCount := GetPropList(Self,Props);
@@ -208,21 +203,24 @@ begin
     if t.EOF then t.Insert else t.Edit;
     for i := 0 to PropCount - 1 do begin
       Prop := Props^[i];
+      PropName := Prop^.Name;
       case Prop^.PropType^.Kind of
         tkInteger, tkChar, tkWChar, tkBool:
-          t.Columns[Prop^.Name].AsInteger := GetOrdProp(Self,Prop);
+          if (PropName <> 'ID') or (FID > -1) then
+            t.Columns[PropName].AsInteger := GetOrdProp(Self,Prop);
         tkFloat:
-          t.Columns[Prop^.Name].AsFloat := GetFloatProp(Self,Prop);
+          t.Columns[PropName].AsFloat := GetFloatProp(Self,Prop);
         tkString, tkAString, tkLString:
-          t.Columns[Prop^.Name].AsString := GetStrProp(Self,Prop);
+          t.Columns[PropName].AsString := GetStrProp(Self,Prop);
         tkWString:
-          t.Columns[Prop^.Name].AsWideString := GetWideStrProp(Self,Prop);
+          t.Columns[PropName].AsWideString := GetWideStrProp(Self,Prop);
         tkInt64, tkQWord:
-          t.Columns[Prop^.Name].AsLargeInt := GetInt64Prop(Self,Prop);
+          t.Columns[PropName].AsLargeInt := GetInt64Prop(Self,Prop);
       end;
     end;
     t.Post;
     t.Commit;
+    FID := t.Columns['ID'].AsInteger;
   finally
     FreeMem(Props);
   end;
@@ -234,6 +232,7 @@ var
   PropCount,i: Integer;
   Props: PPropList;
   Prop: PPropInfo;
+  PropName: String;
 begin
   FID := AID;
   t := GetTableInstance;
@@ -245,17 +244,18 @@ begin
   try
     for i := 0 to PropCount - 1 do begin
       Prop := Props^[i];
+      PropName := Prop^.Name;
       case Prop^.PropType^.Kind of
         tkInteger, tkChar, tkWChar, tkBool:
-          SetOrdProp(Self,Prop,t.Columns[Prop^.Name].AsInteger);
+          SetOrdProp(Self,Prop,t.Columns[PropName].AsInteger);
         tkFloat:
-          SetFloatProp(Self,Prop,t.Columns[Prop^.Name].AsFloat);
+          SetFloatProp(Self,Prop,t.Columns[PropName].AsFloat);
         tkString, tkAString, tkLString:
-          SetStrProp(Self,Prop,t.Columns[Prop^.Name].AsString);
+          SetStrProp(Self,Prop,t.Columns[PropName].AsString);
         tkWString:
-          SetWideStrProp(Self,Prop,t.Columns[Prop^.Name].AsWideString);
+          SetWideStrProp(Self,Prop,t.Columns[PropName].AsWideString);
         tkInt64, tkQWord:
-          SetInt64Prop(Self,Prop,t.Columns[Prop^.Name].AsLargeInt);
+          SetInt64Prop(Self,Prop,t.Columns[PropName].AsLargeInt);
       end;
     end;
   finally

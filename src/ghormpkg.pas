@@ -7,7 +7,7 @@ unit ghormpkg;
 interface
 
 uses
-  ghorm, LazarusPackageIntf;
+  ghORM, LazarusPackageIntf;
 
 implementation
 
