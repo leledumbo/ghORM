@@ -1,46 +1,65 @@
-<?xml version="1.0"?>
-<fpdoc-descriptions><package name="ghORM Framework"><module name="ghORM"><element name="TghModel"><short>Base model for ghORM</short><descr>This is the base class that all ghORM classes should extend from to make use of ORM functionality in ghORM</descr>
-      </element><short>Object Relational Mapping unit built on top of Greyhound project</short><descr>The idea is to automate saving and loading of published properties. Note that the API is not yet stable, it might change in the future without notice</descr><element name="TghModel.GetTable"><short>Get table instance of the current model</short>
-      </element><element name="TghModel.Create"><short>Create a new or load an existing instance of a table row</short><descr>If no ID parameter is given, then an ID will be automatically assigned (and is not modifiable). Otherwise, it will try to load a row with the given ID. Note that the automatic ID assignment is <b>NOT</b> thread-safe, therefore one should handle it with care.
-
-If an ID parameter is given, then the effect is the same as calling Create without parameter, followed by calling Load with the given ID.</descr><errors>If there's no row having the given ID, an exception will be raised</errors><seealso>TghModel.Load</seealso>
-      </element><element name="TghModel.Save"><short>Save all published properties into the permanent storage</short>
-      </element><element name="TghModel.Load"><short>Load an existing instance of a table row</short><errors>If there's no row having the given ID, an exception will be raised</errors>
-      </element><element name="TghModel.ID"><short>ID of the current instance</short><descr>This ID uniquely identifies the row and it can't be modified through this property. Use <link id="TghModel.Load">Load</link> method to change the current instance to different row.</descr>
-      </element><element name="RegisterClass"><short>Register a TghModel descendant to be recognized by ghORM system</short>
-      </element><element name="SetConnection"><short>Set connection properties to be used by ghORM</short>
-      </element><element name="SetConnection.ABroker"><short>Type of connection broker, refer to Greyhound for a complete list</short>
-      </element><element name="SetConnection.ADBName"><short>Database name</short><descr>Depending on the broker type, it can be a filename or a database name</descr>
-      </element><element name="GetConnection"><short>Get the currently active connection</short>
-      </element><element name="RegisterClass.AClass"><short>TghModel descendant class to be registered</short>
-      </element><element name="RegisterClass.AName"><descr>If no such a parameter is given, then it will be deduced automatically from the class name by removing the initial 'T'. Thus, TUsers will map to 'users' table.</descr><short>Optional parameter that maps the class and the table name.</short>
-      </element><element name="TghModel.Load.AID"><short>ID of the row to load data from</short>
-      </element><element name="TghModel.Create.AID"><short>ID of the row to load data from</short>
-      </element><element name="TghModelClass"/>
-    <element name="TghModel.GetTableClass"><short>Get the table represented by this class</short>
+<?xml version="1.0" encoding="UTF-8"?>
+<fpdoc-descriptions>
+  <package name="ghORM Framework">
+    <module name="ghORM">
+      <short>Object Relational Mapping unit built on top of Greyhound project</short>
+      <descr>The idea is to automate saving and loading of published properties. Note that the API is not yet stable, it might change in the future without notice</descr>
+      <element name="TModel">
+        <short>Base class for all ghORM models</short>
+        <descr>All models should inherit from this class and implement the abstract methods and create the respective <link id="#ghormpkg.ghorm.TORM"/> for the CRUD-er.</descr>
       </element>
-    <element name="TghModel.GetTableInstance"><short>Get the table row represented by this object</short>
+      <element name="TModel.FID">
+        <short>Database ID for this model's object</short>
+        <descr>Read-only by design, as one should not alter this. Take whatever value obtained from the <link id="#ghormpkg.ghorm.TORM"/> instance instead.</descr>
       </element>
-    <element name="TghModel.Connect"><short>Connect with other table to create relationship</short>
-      </element><element name="TghModel.Connect.TargetTable"/><element name="TghModel.Connect.ATargetTable"><short>Name of table to connect</short>
-      </element><element name="TghModel.GeneratorName"/><element name="ConnectionNameToLibClass"><short>Retrieve lib class by name</short><descr>The following is currently defined:
-<ul><li>sqlite3</li><li>interbase</li><li>firebird</li><li>mssql</li>
-          </ul>
-        </descr><errors>If invalid name given, <var>nil</var> will be returned</errors>
-      </element><element name="TghModel.ConnectMN"><descr>It uses the following convention rule to make the connection easy:
-<ul><li>an auxiliary table named &lt;this class name&gt;_&lt;target table&gt; is assumed to exist</li><li>the table consist of &lt;this class name&gt;_id and &lt;target table&gt;_id columns</li>
-          </ul>
-        </descr><short>Create M-N relationship with table named <var>ATargetTable</var>
-        </short><errors>An exception will be raised if either the target table or auxiliary table doesn't exist</errors>
-      </element><element name="TghModel.Connect1N"><short>Create 1-N relationship with table named <var>ATargetTable</var>
-        </short>
-      <descr>It uses the following convention rule to make the connection easy:
-<ul><li>The target table should have &lt;this class name&gt;_id as foreign key column</li>
-          </ul>
+      <element name="TModel.GetTableName">
+        <short>Override this method to give a database table name for this model</short>
+        <descr>Other methods accepting TghSQLTable parameter shall receive an instance of this table</descr>
+      </element>
+      <element name="TModel.Validate">
+        <short>Override this method to implement automatic validation when saving an object (insert/update) through <link id="#ghormpkg.ghorm.TORM"/> instance</short>
+        <errors>Automatic validation isn't yet implemented, but it shall be soon</errors>
+      </element>
+      <element name="TModel.LoadFromTable">
+        <short>Override this method to assign object's properties from given table instance</short>
+        <descr>The table instance already points to respective row in the table, so you just have to assign the values to properties such as:
+<p><code>FField := ATable['column-name'].AsString;
+</code></p>
         </descr>
+        <errors>If you access non-existing column, an exception will be generated</errors>
       </element>
-    <element name="TghModel.Connect1N.ATargetTable"><short>Name of the table to connect</short>
-      </element><element name="TghModel.ConnectMN.ATargetTable"><short>Name of the table to connect</short>
+      <element name="TModel.SaveToTable">
+        <short>Override this method to assign table instance columns with current object's properties</short>
+        <descr>The table instance already points to respective row in the table, so you just have to assign the values to properties such as:
+<p><code>ATable['column-name'].AsString := FField;
+</code></p>
+        </descr>
+        <errors>If you access non-existing column, an exception will be generated</errors>
+      </element>
+      <element name="TModel.LoadRelationships">
+        <short>Override this method to load actual instances of linked tables</short>
+        <descr>By default, when getting an object from <link id="#ghormpkg.ghorm.TORM"/> instance, the linked objects from table relationships are not loaded. This is to prevent stack overflow in case of M-N relationship. This method will be called automatically when calling <link id="#ghormpkg.ghorm.TORM.ResolveLinks"/>.</descr>
+        <errors>If you access non-existing link, an exception will be generated</errors>
+      </element>
+      <element name="TModel.LoadFromTable.ATable">
+        <short>Table instance resembling the current object</short>
+      </element>
+      <element name="TModel.SaveToTable.ATable">
+        <short>Table instance resembling the current object</short>
+      </element>
+      <element name="TModel.SaveRelationships">
+        <short>Override this method to load actual instances of linked tables</short>
+        <descr>In case of an insert operation, the object doesn't have an ID yet. So we can't save the object and relationships in one go. This method is supposed to save the relationships and will be automatically called upon insert/update. The <link id="#ghormpkg.ghorm.TORM"/> instance will take care of the saving order (the object first, retrieve its ID and use it to save the relationships).</descr>
+        <errors>If you access non-existing link, an exception will be generated</errors>
+      </element>
+      <element name="TModel.LoadRelationships.ALinks">
+        <short>List of tables linked to this model</short>
+      </element>
+      <element name="TModel.SaveRelationships.ALinks">
+        <short>List of tables linked to this model</short>
+      </element>
+      <element name="TModel.ID">
+        <short>Property access for the protected <link id="#ghormpkg.ghorm.TModel.FID"/> field</short>
       </element>
     </module>
   </package>
