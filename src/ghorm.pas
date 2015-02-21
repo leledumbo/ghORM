@@ -1,306 +1,202 @@
 unit ghORM;
 
 {$mode objfpc}{$H+}
-{$assertions on}
-{$M+}
 
 interface
 
 uses
-  ghSQL, gvector;
+  Classes, SysUtils, fgl, ghSQL;
 
 type
 
-  TghModel = class;
+  { TModel }
 
-  { TghModelList }
-
-  TghModelList = class(specialize TVector<TghModel>)
-  public
-    destructor Destroy; override;
-  end;
-
-  TghModelClass = class of TghModel;
-
-  { TghModel }
-
-  TghModel = class
-  private
-    function GetConnections(const ATargetTable: TghModelClass): TghModelList;
+  TModel = class
   protected
     FID: Integer;
-    class function GetTableClass: TghSQLTable;
-    function GetTableInstance: TghSQLTable;
   public
-    constructor Create; virtual;
-    constructor Create(const AID: Integer);
-    class procedure Connect1N(const ATargetTable: TghModelClass);
-    class procedure ConnectMN(const ATargetTable: TghModelClass);
-    procedure Save; virtual;
-    procedure Load(const AID: Integer); virtual;
-    property Connections[const ATargetTable: TghModelClass]: TghModelList read GetConnections;
-  published
+    class function GetTableName: String; virtual; abstract;
+    function Validate: Boolean; virtual; abstract;
+    procedure LoadFromTable(ATable: TghSQLTable); virtual; abstract;
+    procedure SaveToTable(ATable: TghSQLTable); virtual; abstract;
+    procedure LoadRelationships(ALinks: TghSQLTableList); virtual;
+    procedure SaveRelationships(ALinks: TghSQLTableList); virtual;
     property ID: Integer read FID;
   end;
 
-procedure RegisterClass(AClass: TghModelClass); inline;
-procedure RegisterClass(AClass: TghModelClass; const AName: String); inline;
-procedure RegisterClass(AClass: TghModelClass; const AName: String; const AIDGeneratorName: String);
+  { TModelList }
 
-procedure SetConnection(const ALib: TghSQLLibClass; const ADBName: String);
-function GetConnection: TghSQLConnector; inline;
+  generic TModelList<T: TObject> = class(specialize TFPGObjectList<T>)
+  public
+    constructor Create;
+  end;
 
-function ConnectionNameToLibClass(const AConName: String): TghSQLLibClass;
+  { TORM }
+
+  generic TORM<T: TModel> = class
+  protected
+    function GetTable: TghSQLTable;
+  public
+    type TThisModelList = specialize TModelList<T>;
+    constructor Create;
+    function New: T;
+    function Insert(o: T): Boolean;
+    function Update(o: T): Boolean;
+    function Delete(o: T): Boolean;
+    function GetOne(id: Integer; out o: T): Boolean;
+    function GetWhere(conditions: String; out ol: TThisModelList): Boolean;
+    procedure LinkRelationships; virtual;
+    procedure ResolveLinks(o: T);
+  end;
+
+procedure SetConn(AConn: TghSQLConnector);
+function Conn: TghSQLConnector;
+
+resourcestring
+  rsDbConnUninitialized = 'Database connection has not been initialized';
 
 implementation
 
-uses
-  SysUtils,TypInfo,ghashmap,ghSQLdbLib;
-
-type
-
-  { TClassHash }
-
-  TClassHash = class
-    class function hash(a:TClass; n:longint):longint; inline;
-  end;
-
-  TClassInfo = record
-    Name: String;
-    IDGeneratorName: String;
-  end;
-
-  TClassMap = specialize THashmap<TClass,TClassInfo,TClassHash>;
-
-{ TghModelList }
-
-destructor TghModelList.Destroy;
 var
-  m: TghModel;
+  LConn: TghSQLConnector;
+
+procedure SetConn(AConn: TghSQLConnector);
 begin
-  for m in Self do m.Free;
-  inherited Destroy;
+  LConn := AConn;
 end;
 
-class function TClassHash.hash(a: TClass; n: longint): longint;
-var
-  s: String;
-  c: Char;
+function Conn: TghSQLConnector;
 begin
-  Result := 0;
-  s := LowerCase(a.ClassName);
-  for c in s do Inc(Result,Ord(c));
-  Result := Result mod n;
+  if not Assigned(LConn) then
+    raise EghSQLHandlerError(rsDbConnUninitialized);
+  Result := LConn;
 end;
 
-var
-  Connection: TghSQLConnector;
-  ClassMap: TClassMap;
+{ TModel }
 
-procedure RegisterClass(AClass: TghModelClass); inline;
-var
-  ClassName: String;
+procedure TModel.LoadRelationships(ALinks: TghSQLTableList);
 begin
-  ClassName := AClass.ClassName;
-  Delete(ClassName,1,1);
-  RegisterClass(AClass,ClassName);
+  // intentionally left blank
 end;
 
-procedure RegisterClass(AClass: TghModelClass; const AName: String);
+procedure TModel.SaveRelationships(ALinks: TghSQLTableList);
 begin
-  RegisterClass(AClass,AName,'');
+  // intentionally left blank
 end;
 
-procedure RegisterClass(AClass: TghModelClass; const AName: String;
-  const AIDGeneratorName: String);
-var
-  ClassInfo: TClassInfo;
+{ TModelList }
+
+constructor TModelList.Create;
 begin
-  with ClassInfo do begin
-    Name := AName;
-    IDGeneratorName := AIDGeneratorName;
-  end;
-  ClassMap[AClass] := ClassInfo;
+  inherited Create(true);
 end;
 
-procedure SetConnection(const ALib: TghSQLLibClass; const ADBName: String);
-begin
-  if Assigned(Connection) then Connection.Free;
-  Connection := TghSQLConnector.Create(ALib);
-  with Connection do begin
-    Database := ADBName;
-    Connect;
-  end;
-end;
+{ TORM }
 
-function GetConnection: TghSQLConnector; inline;
+function TORM.Delete(o: T): Boolean;
 begin
-  Result := Connection;
-  Assert(Assigned(Result));
-end;
-
-function ConnectionNameToLibClass(const AConName: String): TghSQLLibClass;
-begin
-  case LowerCase(AConName) of
-    'sqlite3'  : Result := TghSQLite3Lib;
-    'interbase': Result := TghIBLib;
-    'firebird' : Result := TghFirebirdLib;
-    'mssql'    : Result := TghMSSQLLib;
-    else         Result := nil;
-  end;
-end;
-
-{ TghModel }
-
-function TghModel.GetConnections(const ATargetTable: TghModelClass
-  ): TghModelList;
-var
-  Rel: TghSQLTable;
-begin
-  if ClassMap.Contains(ATargetTable) then begin
-    Result := TghModelList.Create;
-    Rel := GetTableInstance.Links[ClassMap[ATargetTable].Name];
-    Rel.First;
-    while not Rel.EOF do begin
-      Result.PushBack(ATargetTable.Create(Rel.Columns['id'].AsInteger));
-      Rel.Next;
-    end;
-  end else
-    raise EghSQLError.CreateFmt('%s is not a registered model class',[ATargetTable.ClassName]);
-end;
-
-class function TghModel.GetTableClass: TghSQLTable;
-begin
-  Result := GetConnection.Tables[ClassMap[ClassType].Name];
-end;
-
-function TghModel.GetTableInstance: TghSQLTable;
-begin
-  Result := GetTableClass.Where('id = ' + IntToStr(FID)).Open;
-end;
-
-constructor TghModel.Create;
-begin
-  FID := -1;
-end;
-
-constructor TghModel.Create(const AID: Integer);
-begin
-  Load(AID);
-end;
-
-procedure TghModel.Save;
-var
-  t: TghSQLTable;
-  PropCount,i: Integer;
-  Props: PPropList;
-  Prop: PPropInfo;
-  PropName: String;
-begin
-  t := GetTableInstance;
-  PropCount := GetPropList(Self,Props);
   try
-    if t.EOF then t.Insert else t.Edit;
-    for i := 0 to PropCount - 1 do begin
-      Prop := Props^[i];
-      PropName := Prop^.Name;
-      case Prop^.PropType^.Kind of
-        tkInteger, tkChar, tkWChar, tkBool:
-          if (PropName <> 'ID') or (FID > -1) then
-            t.Columns[PropName].AsInteger := GetOrdProp(Self,Prop);
-        tkFloat:
-          t.Columns[PropName].AsFloat := GetFloatProp(Self,Prop);
-        tkString, tkAString, tkLString:
-          t.Columns[PropName].AsString := GetStrProp(Self,Prop);
-        tkWString:
-          t.Columns[PropName].AsWideString := GetWideStrProp(Self,Prop);
-        tkInt64, tkQWord:
-          t.Columns[PropName].AsLargeInt := GetInt64Prop(Self,Prop);
-      end;
-    end;
-    t.Post;
-    t.Commit;
-    FID := t.Columns['ID'].AsInteger;
-  finally
-    FreeMem(Props);
+    GetTable.Where('id = %d',[o.ID]).Delete;
+    Result := true;
+  except
+    Result := false;
   end;
 end;
 
-procedure TghModel.Load(const AID: Integer);
+function TORM.GetOne(id: Integer; out o: T): Boolean;
 var
-  t: TghSQLTable;
-  PropCount,i: Integer;
-  Props: PPropList;
-  Prop: PPropInfo;
-  PropName: String;
+  Tab: TghSQLTable;
 begin
-  FID := AID;
-  t := GetTableInstance;
-  if t.EOF then raise EghSQLError.CreateFmt(
-    'No row in table %s having ID = %d',
-    [ClassMap[TghModelClass(ClassType)].Name,AID]
-  );
-  PropCount := GetPropList(Self,Props);
+  Tab := GetTable.Where('id = %d',[id]).Open;
+  Result := not Tab.EOF;
+  if Result then begin
+    o := T.Create;
+    o.FID := Tab['id'].AsInteger;
+    o.LoadFromTable(Tab);
+  end;
+end;
+
+function TORM.GetWhere(conditions: String; out ol: TThisModelList): Boolean;
+var
+  Tab: TghSQLTable;
+  o: T;
+begin
+  Tab := GetTable.Where(Conditions).Open;
+  ol := TThisModelList.Create;
+  while not Tab.EOF do begin
+    o := T.Create;
+    o.LoadFromTable(Tab);
+    ol.Add(o);
+    Tab.Next;
+  end;
+  Result := true;
+end;
+
+function TORM.Insert(o: T): Boolean;
+var
+  Tab: TghSQLTable;
+begin
   try
-    for i := 0 to PropCount - 1 do begin
-      Prop := Props^[i];
-      PropName := Prop^.Name;
-      case Prop^.PropType^.Kind of
-        tkInteger, tkChar, tkWChar, tkBool:
-          SetOrdProp(Self,Prop,t.Columns[PropName].AsInteger);
-        tkFloat:
-          SetFloatProp(Self,Prop,t.Columns[PropName].AsFloat);
-        tkString, tkAString, tkLString:
-          SetStrProp(Self,Prop,t.Columns[PropName].AsString);
-        tkWString:
-          SetWideStrProp(Self,Prop,t.Columns[PropName].AsWideString);
-        tkInt64, tkQWord:
-          SetInt64Prop(Self,Prop,t.Columns[PropName].AsLargeInt);
-      end;
-    end;
-  finally
-    FreeMem(Props);
+    Tab := GetTable.Open;
+    // first save the object, we need the id
+    Tab.Insert;
+    o.SaveToTable(Tab);
+    Tab.Commit;
+    // now we can use the id to save relationships
+    o.FID := Tab['id'].AsInteger;
+    Tab.Edit;
+    o.SaveRelationships(Tab.Links);
+    Tab.Commit;
+    Result := true;
+  except
+    Result := false;
   end;
 end;
 
-class procedure TghModel.Connect1N(const ATargetTable: TghModelClass);
-var
-  TargetClassName: String;
+function TORM.New: T;
 begin
-  if ClassMap.Contains(ATargetTable) then begin
-    TargetClassName := ClassMap[ATargetTable].Name;
-    GetTableClass.Relations[TargetClassName].Where(TargetClassName + '_id = :id');
-  end else
-    raise EghSQLError.CreateFmt('%s is not a registered model class',[ATargetTable.ClassName]);
+  Result := T.Create;
 end;
 
-class procedure TghModel.ConnectMN(const ATargetTable: TghModelClass);
+function TORM.Update(o: T): Boolean;
 var
-  ThisClassName,TargetClassName: String;
+  Tab: TghSQLTable;
 begin
-  if ClassMap.Contains(ATargetTable) then begin
-    ThisClassName := ClassMap[ClassType].Name;
-    TargetClassName := ClassMap[ATargetTable].Name;
-    GetTableClass
-      .Relations[TargetClassName]
-      .Where(
-        Format(
-          'id in (select %s_id from %s_%s where %s_id = :id)',
-          [TargetClassName,ThisClassName,TargetClassName,ThisClassName]
-        )
-      )
-      .OrderBy('id');
-  end else
-    raise EghSQLError.CreateFmt('%s is not a registered model class',[ATargetTable.ClassName]);
+  try
+    Tab := GetTable.Open;
+    // already has id, we can save both the object and relationships in one go
+    Tab.Edit;
+    o.SaveToTable(Tab);
+    o.SaveRelationships(Tab.Links);
+    Tab.Commit;
+    Result := true;
+  except
+    Result := false;
+  end;
 end;
 
-initialization
-  Connection := nil;
-  ClassMap := TClassMap.Create;
+function TORM.GetTable: TghSQLTable;
+begin
+  Result := Conn.Tables[T.GetTableName];
+end;
 
-finalization
-  if Assigned(Connection) then Connection.Free;
-  ClassMap.Free;
+procedure TORM.ResolveLinks(o: T);
+var
+  Tab: TghSQLTable;
+begin
+  Tab := GetTable.Where('id = %d',[o.ID]).Open;
+  o.LoadRelationships(Tab.Links);
+end;
+
+constructor TORM.Create;
+begin
+  LinkRelationships;
+end;
+
+procedure TORM.LinkRelationships;
+begin
+  // intentionally left blank
+end;
 
 end.
 
