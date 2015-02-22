@@ -29,9 +29,9 @@ uses
 
 procedure TTestUsersAndRoles.SetUp;
 begin
-  Conn.Tables['users'].DeleteAll.Commit;
-  Conn.Tables['roles'].DeleteAll.Commit;
-  Conn.Tables['users_roles'].DeleteAll.Commit;
+  Conn.Tables['users'].Open.DeleteAll.Commit;
+  Conn.Tables['roles'].Open.DeleteAll.Commit;
+  Conn.Tables['users_roles'].Open.DeleteAll.Commit;
 end;
 
 procedure TTestUsersAndRoles.TearDown;
