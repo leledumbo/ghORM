@@ -1,9 +1,9 @@
-This is the file LICENSE.txt, it applies to the ghORM,
-distributed by Mario Ray Mahardhika.
+This is the file LICENSE.txt, it applies to the ghORM, an Object
+Relational Mapping unit built on top of Greyhound project, distributed
+by Mario Ray Mahardhika.
 
-The source code of the Brook framework is distributed under the GNU
-Lesser General Public License (see the file LGPL.2.1.txt) with the
-following modification:
+The source code present here is distributed under the GNU Lesser General
+Public License (see the file LGPL.2.1.txt) with these modifications:
 
 As a special exception, the copyright holders of this library give you
 permission to link this library with independent modules to produce an
